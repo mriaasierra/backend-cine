@@ -1,7 +1,7 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 const Screening = {
-    // Listar funciones con detalles de película y sala
+    // Listar funciones con detalles de película y sala 
     findAll: async () => {
         const query = `
             SELECT 
@@ -18,6 +18,7 @@ const Screening = {
         return rows;
     },
 
+    // Buscar una función específica con sus relaciones
     findById: async (id) => {
         const query = `
             SELECT s.*, m.title, r.room_number 
@@ -29,6 +30,7 @@ const Screening = {
         return rows[0];
     },
 
+    // Programar una nueva función
     create: async (data) => {
         const { date_time, movie_id, room_id } = data;
         const query = `
@@ -38,6 +40,7 @@ const Screening = {
         return rows[0];
     },
 
+    // Re-programar o cambiar película/sala de una función
     update: async (id, data) => {
         const { date_time, movie_id, room_id } = data;
         const query = `
@@ -48,11 +51,11 @@ const Screening = {
         return rows[0];
     },
 
+    // Eliminar función 
     delete: async (id) => {
-        // Esto fallará si ya hay reservas (bookings) para esta función
         await db.query('DELETE FROM screenings WHERE screening_id = $1', [id]);
         return true;
     }
 };
 
-module.exports = Screening;
+export default Screening;

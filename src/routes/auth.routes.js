@@ -1,12 +1,15 @@
-const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import { login, register } from '../controllers/authController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
 
-// PÚBLICO: Para que cualquier empleado/gerente entre al sistema
-router.post('/login', authController.login);
+const router = Router();
 
-// PRIVADO (ADMIN): Solo el Gerente puede crear nuevos usuarios en el sistema
-router.post('/register', verifyToken, isGerente, authController.register);
+// POST /api/auth/login
+// PÚBLICO: Acceso al sistema para todo el personal
+router.post('/login', login);
 
-module.exports = router;
+// POST /api/auth/register
+// PRIVADO: Registro de nuevo personal (Solo accesible por Gerente)
+router.post('/register', verifyToken, isGerente, register);
+
+export default router;

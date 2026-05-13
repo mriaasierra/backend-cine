@@ -1,6 +1,7 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 const User = {
+    // Buscar usuario por email 
     findByEmail: async (email) => {
         const query = `
             SELECT u.*, r.role_name 
@@ -11,15 +12,17 @@ const User = {
         return rows[0];
     },
 
+    // Registrar nuevo usuario 
     create: async (data) => {
         const { first_name, last_name, email, password, role_id } = data;
         const query = `
             INSERT INTO users (first_name, last_name, email, password, role_id, status)
-            VALUES ($1, $2, $3, $4, $5, 'Activo') RETURNING user_id, email, first_name`;
+            VALUES ($1, $2, $3, $4, $5, 'Activo') 
+            RETURNING user_id, email, first_name`; // No retornamos el password por seguridad
         const values = [first_name, last_name, email, password, role_id];
         const { rows } = await db.query(query, values);
         return rows[0];
     }
 };
 
-module.exports = User;
+export default User;

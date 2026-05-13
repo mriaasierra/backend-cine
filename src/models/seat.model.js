@@ -1,14 +1,14 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 const SeatAssignment = {
-    // Obtener asientos de una reserva específica
+    // Obtener los asientos asignados a una reserva específica
     findByBookingId: async (bookingId) => {
         const query = 'SELECT * FROM seat_assignments WHERE booking_id = $1';
         const { rows } = await db.query(query, [bookingId]);
         return rows;
     },
 
-    // Crear la asignación de un asiento
+    // Registrar la ocupación de un asiento (ej: 'A1', 'B5')
     create: async (seat_number, booking_id) => {
         const query = `
             INSERT INTO seat_assignments (seat_number, booking_id)
@@ -17,15 +17,19 @@ const SeatAssignment = {
         return rows[0];
     },
 
-    // Consultar disponibilidad (para evitar que dos personas elijan el mismo asiento en la misma función)
+    // Verifica si un asiento ya está ocupado para una función específica, considerando solo las reservas confirmadas
     checkAvailability: async (screeningId, seatNumber) => {
         const query = `
             SELECT sa.* FROM seat_assignments sa
             JOIN bookings b ON sa.booking_id = b.booking_id
-            WHERE b.screening_id = $1 AND sa.seat_number = $2 AND b.booking_status = 'Confirmada'`;
+            WHERE b.screening_id = $1 
+            AND sa.seat_number = $2 
+            AND b.booking_status = 'Confirmada'`;
         const { rows } = await db.query(query, [screeningId, seatNumber]);
-        return rows.length === 0; // true si está disponible
+        
+        // Retorna true si el asiento está libre
+        return rows.length === 0; 
     }
 };
 
-module.exports = SeatAssignment;
+export default SeatAssignment;

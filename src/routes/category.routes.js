@@ -1,15 +1,22 @@
-const express = require('express');
-const router = express.Router();
-const categoryController = require('../controllers/categoryController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
-const { validateCategory } = require('../middlewares/categoryValidator');
+import { Router } from 'express';
+import * as categoryController from '../controllers/categoryController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+import { validateCategory } from '../middlewares/categoryValidator.js';
+
+const router = Router();
 
 // --- RUTAS DE CATEGORÍAS DE PRODUCTOS ---
 
-// CUALQUIER USUARIO LOGUEADO: Puede ver las categorías para filtrar productos
+/**
+ * @route   GET /api/categories
+ * @descripcion   CUALQUIER USUARIO LOGUEADO: Ver categorías para filtrar productos
+ */
 router.get('/', verifyToken, categoryController.getAllCategories);
 
-// SOLO ADMIN (Gerente): Puede crear nuevas categorías (ej. "Promociones", "Souvenirs")
+/**
+ * @route   POST /api/categories
+ * @desc    SOLO GERENTE: Crear nuevas categorías (ej. "Combos", "Snacks")
+ */
 router.post('/', 
     verifyToken, 
     isGerente, 
@@ -17,7 +24,10 @@ router.post('/',
     categoryController.createCategory
 );
 
-// SOLO ADMIN (Gerente): Puede actualizar el nombre de una categoría existente
+/**
+ * @route   PUT /api/categories/:id
+ * @desc    SOLO GERENTE: Actualizar nombre de una categoría
+ */
 router.put('/:id', 
     verifyToken, 
     isGerente, 
@@ -25,12 +35,14 @@ router.put('/:id',
     categoryController.updateCategory
 );
 
-// SOLO ADMIN (Gerente): Puede eliminar categorías 
-// (Nota: El controlador debe validar que no tenga productos asociados)
+/**
+ * @route   DELETE /api/categories/:id
+ * @desc    SOLO GERENTE: Eliminar categorías (si no tienen productos asociados)
+ */
 router.delete('/:id', 
     verifyToken, 
     isGerente, 
     categoryController.deleteCategory
 );
 
-module.exports = router;
+export default router;

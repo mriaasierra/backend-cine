@@ -1,22 +1,39 @@
-const express = require('express');
-const router = express.Router();
-const customerController = require('../controllers/customerController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
-const { validateCustomer } = require('../middlewares/customerValidator');
+import { Router } from 'express';
+import * as customerController from '../controllers/customerController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+import { validateCustomer } from '../middlewares/customerValidator.js';
+
+const router = Router();
 
 // --- RUTAS DE CLIENTES ---
 
-// CUALQUIER USUARIO LOGUEADO: Puede ver la lista de clientes
+/**
+ * @route   GET /api/customers
+ * @desc    CUALQUIER USUARIO LOGUEADO: Ver lista completa de clientes registrados
+ */
 router.get('/', verifyToken, customerController.getAllCustomers);
 
-// CUALQUIER USUARIO LOGUEADO: Puede buscar un cliente por su cédula 
-// (Muy útil para la taquilla del cine)
+/**
+ * @route   GET /api/customers/cedula/:cedula
+ * @desc    BÚSQUEDA RÁPIDA: Encontrar cliente por cédula 
+ */
 router.get('/cedula/:cedula', verifyToken, customerController.getCustomerByCedula);
 
-// CUALQUIER USUARIO LOGUEADO: Puede registrar un nuevo cliente al momento de la venta
+/**
+ * @route   POST /api/customers
+ * @desc    REGISTRO: Crear un nuevo cliente durante el proceso de venta
+ */
 router.post('/', verifyToken, validateCustomer, customerController.createCustomer);
 
-// SOLO ADMIN (Gerente): Puede actualizar datos sensibles de un cliente
-router.put('/:id', verifyToken, isGerente, validateCustomer, customerController.updateCustomer);
+/**
+ * @route   PUT /api/customers/:id
+ * @desc    EDICIÓN: Actualizar datos de cliente (Gerente)
+ */
+router.put('/:id', 
+    verifyToken, 
+    isGerente, 
+    validateCustomer, 
+    customerController.updateCustomer
+);
 
-module.exports = router;
+export default router;
