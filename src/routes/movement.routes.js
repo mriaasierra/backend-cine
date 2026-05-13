@@ -1,13 +1,26 @@
-const express = require('express');
-const router = express.Router();
-const movementController = require('../controllers/movementController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
-const { validateMovement } = require('../middlewares/movementValidator');
+import { Router } from 'express';
+import * as movementController from '../controllers/movementController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+import { validateMovement } from '../middlewares/movementValidator.js';
 
-// Ver historial de stock
+const router = Router();
+
+/**
+ * @route   GET /api/movements
+ * @desc    HISTORIAL: Ver todos los movimientos de entrada y salida de stock
+ */
 router.get('/', verifyToken, movementController.getAllMovements);
 
-// Registrar entrada/salida (Solo Admin)
-router.post('/', verifyToken, isGerente, validateMovement, movementController.createMovement);
+/**
+ * @route   POST /api/movements
+ * @desc    REGISTRO: Crear un nuevo movimiento de inventario (Solo Gerente)
+ * Nota: Esto disparará el Trigger en PostgreSQL para actualizar el stock.
+ */
+router.post('/', 
+    verifyToken, 
+    isGerente, 
+    validateMovement, 
+    movementController.createMovement
+);
 
-module.exports = router;
+export default router;

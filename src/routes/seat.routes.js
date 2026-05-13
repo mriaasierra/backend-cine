@@ -1,16 +1,29 @@
-const express = require('express');
-const router = express.Router();
-const seatController = require('../controllers/seatController');
-const { verifyToken } = require('../middlewares/authMiddleware');
-const { validateSeat } = require('../middlewares/seatValidator');
+import { Router } from 'express';
+import * as seatController from '../controllers/seatController.js';
+import { verifyToken } from '../middlewares/authMiddleware.js';
+import { validateSeat } from '../middlewares/seatValidator.js';
+
+const router = Router();
 
 // --- RUTAS DE ASIGNACIÓN DE ASIENTOS ---
 
-// PRIVADO (TOKEN): Ver qué asientos están ocupados en una reserva específica
+/**
+ * @route   GET /api/seats/booking/:bookingId
+ * @desc    CONSULTA: Ver los asientos específicos vinculados a una reserva
+ * @access  Privado (Cualquier empleado logueado)
+ */
 router.get('/booking/:bookingId', verifyToken, seatController.getSeatsByBooking);
 
-// PRIVADO (TOKEN): Asignar asientos a una reserva (Ruta para el proceso de venta)
-// Esta es la que recibe el array de asientos ["A1", "A2"]
-router.post('/assign', verifyToken, validateSeat, seatController.assignSeats);
+/**
+ * @route   POST /api/seats/assign
+ * @desc    OPERACIÓN: Asignar múltiples asientos a una reserva en proceso de venta
+ * @access  Privado (Cualquier empleado logueado)
+ * @note    Recibe un array de identificadores de asientos (Ej: ["A1", "A2"])
+ */
+router.post('/assign', 
+    verifyToken, 
+    validateSeat, 
+    seatController.assignSeats
+);
 
-module.exports = router;
+export default router;

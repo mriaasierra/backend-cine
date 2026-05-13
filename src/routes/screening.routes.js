@@ -1,18 +1,28 @@
-const express = require('express');
-const router = express.Router();
-const screeningController = require('../controllers/screeningController');
-const { validateScreening } = require('../middlewares/screeningValidator');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import * as screeningController from '../controllers/screeningController.js';
+import { validateScreening } from '../middlewares/screeningValidator.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+
+const router = Router();
 
 // --- RUTAS DE FUNCIONES (SCREENINGS) ---
 
-// CUALQUIERA LOGUEADO: Puede ver las funciones para informar al cliente o vender
+/**
+ * @route   GET /api/screenings
+ * @desc    PRIVADO: Listar funciones 
+ */
 router.get('/', verifyToken, screeningController.getAllScreenings);
 
-// CUALQUIERA LOGUEADO: Puede ver el detalle de una función específica
+/**
+ * @route   GET /api/screenings/:id
+ * @desc    PRIVADO: Consultar detalles técnicos de una función específica
+ */
 router.get('/:id', verifyToken, screeningController.getScreeningById);
 
-// SOLO ADMIN (Gerente): Puede programar nuevas funciones de películas
+/**
+ * @route   POST /api/screenings
+ * @desc    SOLO GERENTE: Programar nuevas funciones 
+ */
 router.post('/', 
     verifyToken, 
     isGerente, 
@@ -20,11 +30,14 @@ router.post('/',
     screeningController.createScreening
 );
 
-// SOLO ADMIN (Gerente): Puede eliminar o cancelar una función programada
+/**
+ * @route   DELETE /api/screenings/:id
+ * @desc    SOLO GERENTE: Eliminar una función 
+ */
 router.delete('/:id', 
     verifyToken, 
     isGerente, 
     screeningController.deleteScreening
 );
 
-module.exports = router;
+export default router;

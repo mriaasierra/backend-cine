@@ -1,13 +1,28 @@
-// src/routes/roomRoutes.js
-const router = require('express').Router();
-const roomController = require('../controllers/roomController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import * as roomController from '../controllers/roomController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
 
-// PRIVADO (TOKEN): Cualquier empleado puede ver las salas para checkear disponibilidad
+const router = Router();
+
+/**
+ * @route   GET /api/rooms
+ * @desc    PRIVADO: Consultar todas las salas para verificar disponibilidad
+ * @access  Cualquier empleado autenticado
+ */
 router.get('/', verifyToken, roomController.getAllRooms);
 
-// PRIVADO (ADMIN): Solo el Gerente crea o modifica salas físicas
+/**
+ * @route   POST /api/rooms
+ * @desc    PRIVADO: Registrar una nueva sala física en el sistema
+ * @access  Solo Gerente
+ */
 router.post('/', verifyToken, isGerente, roomController.createRoom);
+
+/**
+ * @route   PUT /api/rooms/:id
+ * @desc    PRIVADO: Modificar especificaciones de una sala (capacidad, tipo, estado)
+ * @access  Solo Gerente
+ */
 router.put('/:id', verifyToken, isGerente, roomController.updateRoom);
 
-module.exports = router;
+export default router;
