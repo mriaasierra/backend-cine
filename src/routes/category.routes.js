@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import * as categoryController from '../controllers/categoryController.js';
-import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
-import { validateCategory } from '../middlewares/categoryValidator.js';
+import * as categoryController from '../controllers/category.controller.js';
+import { authMiddleware, isGerente } from '../middlewares/auth.js';
+import { validateCategory } from '../middlewares/category.validator.js';
 
 const router = Router();
 
@@ -11,14 +11,14 @@ const router = Router();
  * @route   GET /api/categories
  * @descripcion   CUALQUIER USUARIO LOGUEADO: Ver categorías para filtrar productos
  */
-router.get('/', verifyToken, categoryController.getAllCategories);
+router.get('/', authMiddleware, categoryController.getAllCategories);
 
 /**
  * @route   POST /api/categories
  * @desc    SOLO GERENTE: Crear nuevas categorías (ej. "Combos", "Snacks")
  */
 router.post('/', 
-    verifyToken, 
+    authMiddleware, 
     isGerente, 
     validateCategory, 
     categoryController.createCategory
@@ -29,7 +29,7 @@ router.post('/',
  * @desc    SOLO GERENTE: Actualizar nombre de una categoría
  */
 router.put('/:id', 
-    verifyToken, 
+    authMiddleware, 
     isGerente, 
     validateCategory, 
     categoryController.updateCategory
@@ -40,7 +40,7 @@ router.put('/:id',
  * @desc    SOLO GERENTE: Eliminar categorías (si no tienen productos asociados)
  */
 router.delete('/:id', 
-    verifyToken, 
+    authMiddleware, 
     isGerente, 
     categoryController.deleteCategory
 );

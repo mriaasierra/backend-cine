@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import * as productController from '../controllers/productController.js';
-import * as categoryController from '../controllers/categoryController.js';
-import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
-import { validateProduct } from '../middlewares/productValidator.js';
+import * as productController from '../controllers/product.controller.js';
+import * as categoryController from '../controllers/category.controller.js';
+import { verifyToken, isGerente } from '../middlewares/auth.js';
+import { validateProduct } from '../middlewares/product.validator.js';
 
 const router = Router();
 

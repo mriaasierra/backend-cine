@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import * as movementController from '../controllers/movementController.js';
-import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
-import { validateMovement } from '../middlewares/movementValidator.js';
+import * as movementController from '../controllers/movement.controller.js';
+import { authMiddleware, isGerente } from '../middlewares/auth.js';
+import { validateMovement } from '../middlewares/movement.validator.js';
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const router = Router();
  * @route   GET /api/movements
  * @desc    HISTORIAL: Ver todos los movimientos de entrada y salida de stock
  */
-router.get('/', verifyToken, movementController.getAllMovements);
+router.get('/', authMiddleware, movementController.getAllMovements);
 
 /**
  * @route   POST /api/movements
@@ -17,7 +17,7 @@ router.get('/', verifyToken, movementController.getAllMovements);
  * Nota: Esto disparará el Trigger en PostgreSQL para actualizar el stock.
  */
 router.post('/', 
-    verifyToken, 
+    authMiddleware, 
     isGerente, 
     validateMovement, 
     movementController.createMovement

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { verifyToken as checkToken } from '../utils/jwtHandle.js'; 
+import { verifyToken as checkToken } from '../../utils/jwt.handle.js'; 
 
 export const authMiddleware = (req, res, next) => {
     const authHeader = req.header('Authorization');

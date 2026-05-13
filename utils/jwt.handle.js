@@ -1,15 +1,25 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-const generateToken = (user) => {
+/**
+ * Genera un JWT para el usuario autenticado.
+ * Incluye el ID y el Rol (Gerente/Empleado)
+ */
+export const generateToken = (user) => {
     return jwt.sign(
-        { id: user.user_id, role: user.role_name }, 
+        { 
+            id: user.user_id, 
+            role: user.role_name 
+        }, 
         process.env.JWT_SECRET, 
-        { expiresIn: '8h' }
+        { 
+            expiresIn: '8h' 
+        }
     );
 };
 
-const verifyToken = (token) => {
+/**
+ * Verifica si un token es válido y no ha expirado.
+ */
+export const verifyToken = (token) => {
     return jwt.verify(token, process.env.JWT_SECRET);
 };
-
-module.exports = { generateToken, verifyToken };

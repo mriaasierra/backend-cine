@@ -1,4 +1,4 @@
-import SeatAssignment from '../models/seatModel.js';
+import SeatAssignment from '../models/seat.model.js';
 
 export const assignSeats = async (req, res) => {
     const { seats, booking_id } = req.body; // 'seats' es un array, ej: ["A1", "A2"]

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import * as customerController from '../controllers/customerController.js';
-import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
-import { validateCustomer } from '../middlewares/customerValidator.js';
+import * as customerController from '../controllers/customer.controller.js';
+import { authMiddleware, isGerente } from '../middlewares/auth.js';
+import { validateCustomer } from '../middlewares/customer.validator.js';
 
 const router = Router();
 
@@ -11,26 +11,26 @@ const router = Router();
  * @route   GET /api/customers
  * @desc    CUALQUIER USUARIO LOGUEADO: Ver lista completa de clientes registrados
  */
-router.get('/', verifyToken, customerController.getAllCustomers);
+router.get('/', authMiddleware, customerController.getAllCustomers);
 
 /**
  * @route   GET /api/customers/cedula/:cedula
  * @desc    BÚSQUEDA RÁPIDA: Encontrar cliente por cédula 
  */
-router.get('/cedula/:cedula', verifyToken, customerController.getCustomerByCedula);
+router.get('/cedula/:cedula', authMiddleware, customerController.getCustomerByCedula);
 
 /**
  * @route   POST /api/customers
  * @desc    REGISTRO: Crear un nuevo cliente durante el proceso de venta
  */
-router.post('/', verifyToken, validateCustomer, customerController.createCustomer);
+router.post('/', authMiddleware, validateCustomer, customerController.createCustomer);
 
 /**
  * @route   PUT /api/customers/:id
  * @desc    EDICIÓN: Actualizar datos de cliente (Gerente)
  */
 router.put('/:id', 
-    verifyToken, 
+    authMiddleware, 
     isGerente, 
     validateCustomer, 
     customerController.updateCustomer

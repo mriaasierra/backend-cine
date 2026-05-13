@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { login, register } from '../controllers/authController.js';
-import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+import { login, register } from '../controllers/auth.controller.js';
+import { authMiddleware, isGerente } from '../middlewares/auth.js';
 
 const router = Router();
 
@@ -10,6 +10,6 @@ router.post('/login', login);
 
 // POST /api/auth/register
 // PRIVADO: Registro de nuevo personal (Solo accesible por Gerente)
-router.post('/register', verifyToken, isGerente, register);
+router.post('/register', authMiddleware, isGerente, register);
 
 export default router;
