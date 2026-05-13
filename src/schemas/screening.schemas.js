@@ -1,9 +1,14 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const screeningSchema = z.object({
-  date_time: z.coerce.date(), 
-  movie_id: z.number().int(),
-  room_id: z.number().int()
+  // ✅ Coerce transforma el string de fecha del frontend a objeto Date
+  date_time: z.coerce.date({
+    errorMap: () => ({ message: "Formato de fecha y hora inválido" })
+  }),
+  
+  movie_id: z.number().int({ message: "ID de película inválido" }),
+  
+  room_id: z.number().int({ message: "ID de sala inválido" })
 });
 
-module.exports = screeningSchema;
+export default screeningSchema;

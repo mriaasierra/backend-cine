@@ -1,7 +1,9 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const genreSchema = z.object({
-  name: z.string().max(100)
+  name: z.string()
+    .min(3, { message: "El nombre del género debe tener al menos 3 caracteres" })
+    .max(100, { message: "El nombre del género no puede exceder los 100 caracteres" })
 });
 
-module.exports = genreSchema;
+export default genreSchema;
