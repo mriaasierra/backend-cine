@@ -1,4 +1,4 @@
-import Customer from '../models/customerModel.js';
+import Customer from '../models/customer.model.js';
 
 export const getAllCustomers = async (req, res) => {
     try {
@@ -29,5 +29,21 @@ export const createCustomer = async (req, res) => {
             return res.status(400).json({ message: "Ya existe un cliente con esa cédula" });
         }
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Actualizar datos del cliente
+export const updateCustomer = async (req, res) => {
+    const { id } = req.params;
+    const { first_name, last_name, email } = req.body;
+    try {
+        const result = await query(
+            'UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4',
+            [first_name, last_name, email, id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ message: "Cliente no encontrado" });
+        res.json({ message: "Cliente actualizado con éxito" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar cliente" });
     }
 };

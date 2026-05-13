@@ -1,6 +1,6 @@
-import * as User from '../models/userModel.js';
-import { encrypt, verified } from '../utils/passwordHandle.js';
-import { generateToken } from '../utils/jwtHandle.js';
+import * as User from '../models/user.model.js';
+import { encrypt, verified } from '../../utils/password.handle.js';
+import { generateToken } from '../../utils/jwt.handle.js';
 
 export const register = async (req, res) => {
     try {

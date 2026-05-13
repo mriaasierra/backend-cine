@@ -1,4 +1,4 @@
-import ProductCategory from '../models/categoryModel.js';
+import ProductCategory from '../models/category.model.js';
 
 export const getAllCategories = async (req, res) => {
     try {
@@ -15,6 +15,19 @@ export const createCategory = async (req, res) => {
         res.status(201).json(newCategory);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Actualizar una categoría
+export const updateCategory = async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    try {
+        const result = await query('UPDATE categories SET name = $1 WHERE id = $2', [name, id]);
+        if (result.rowCount === 0) return res.status(404).json({ message: "Categoría no encontrada" });
+        res.json({ message: "Categoría actualizada con éxito" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar la categoría" });
     }
 };
 

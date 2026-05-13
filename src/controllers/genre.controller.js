@@ -1,4 +1,4 @@
-import Genre from '../models/genreModel.js';
+import Genre from '../models/genre.model.js';
 
 export const getAllGenres = async (req, res) => {
     try {
@@ -15,6 +15,27 @@ export const createGenre = async (req, res) => {
         res.status(201).json(newGenre);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Función para actualizar un género existente
+export const updateGenre = async (req, res) => {
+    const { id } = req.params; // Captura el ID de la ruta
+    const { name } = req.body; // Captura el nuevo nombre del género
+    
+    try {
+        // Ejecutamos la consulta usando el pool de conexiones
+        const result = await query('UPDATE genres SET name = $1 WHERE id = $2', [name, id]);
+        
+        // Verificamos si realmente se actualizó algo
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Género no encontrado" });
+        }
+
+        res.json({ message: "Género actualizado correctamente" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error al actualizar el género en la base de datos" });
     }
 };
 

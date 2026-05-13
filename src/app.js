@@ -3,18 +3,18 @@ import cors from 'cors';
 import morgan from 'morgan';
 
 // Importación de rutas 
-import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import movieRoutes from './routes/movieRoutes.js';
-import genreRoutes from './routes/genreRoutes.js';
-import roomRoutes from './routes/roomRoutes.js';
-import screeningRoutes from './routes/screeningRoutes.js';
-import seatRoutes from './routes/seatRoutes.js';
-import bookingRoutes from './routes/bookingRoutes.js';
-import customerRoutes from './routes/customerRoutes.js';
-import productRoutes from './routes/productRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
-import movementRoutes from './routes/movementRoutes.js';
+import authRoutes from './routes/auth.routes.js';
+//import userRoutes from './routes/user.routes.js';
+import movieRoutes from './routes/movie.routes.js';
+import genreRoutes from './routes/genre.routes.js';
+import roomRoutes from './routes/room.routes.js';
+import screeningRoutes from './routes/screening.routes.js';
+import seatRoutes from './routes/seat.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
+import customerRoutes from './routes/customer.routes.js';
+import productRoutes from './routes/product.routes.js';
+import categoryRoutes from './routes/category.routes.js';
+import movementRoutes from './routes/movement.routes.js';
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.use(express.json()); // Habilita la lectura de cuerpos JSON en las peticione
 
 // Módulo de Seguridad y Usuarios
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+//app.use('/api/users', userRoutes);
 
 // Módulo de Cine y Cartelera
 app.use('/api/movies', movieRoutes);

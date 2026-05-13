@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import * as seatController from '../controllers/seatController.js';
-import { verifyToken } from '../middlewares/authMiddleware.js';
-import { validateSeat } from '../middlewares/seatValidator.js';
+import * as seatController from '../controllers/seat.controller.js';
+import { authMiddleware } from '../middlewares/auth.js';
+import { validateSeat } from '../middlewares/seat.validator.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ const router = Router();
  * @desc    CONSULTA: Ver los asientos específicos vinculados a una reserva
  * @access  Privado (Cualquier empleado logueado)
  */
-router.get('/booking/:bookingId', verifyToken, seatController.getSeatsByBooking);
+router.get('/booking/:bookingId', authMiddleware, seatController.getSeatsByBooking);
 
 /**
  * @route   POST /api/seats/assign
@@ -21,7 +21,7 @@ router.get('/booking/:bookingId', verifyToken, seatController.getSeatsByBooking)
  * @note    Recibe un array de identificadores de asientos (Ej: ["A1", "A2"])
  */
 router.post('/assign', 
-    verifyToken, 
+    authMiddleware, 
     validateSeat, 
     seatController.assignSeats
 );

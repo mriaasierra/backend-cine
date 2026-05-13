@@ -1,4 +1,4 @@
-import Movie from '../models/movieModel.js';
+import Movie from '../models/movie.model.js';
 
 export const getAllMovies = async (req, res) => {
     try {
@@ -39,5 +39,22 @@ export const updateMovie = async (req, res) => {
         res.json(updated);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Función para eliminar una película por ID
+export const deleteMovie = async (req, res) => {
+    const { id } = req.params; // Obtenemos el ID de la URL
+    try {
+        const result = await query('DELETE FROM movies WHERE id = $1', [id]);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Película no encontrada" });
+        }
+
+        res.json({ message: "Película eliminada correctamente" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error al eliminar la película en la base de datos" });
     }
 };

@@ -1,4 +1,4 @@
-import Screening from '../models/screeningModel.js';
+import Screening from '../models/screening.model.js';
 
 export const getAllScreenings = async (req, res) => {
     try {

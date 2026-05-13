@@ -1,4 +1,4 @@
-import InventoryMovement from '../models/movementModel.js';
+import InventoryMovement from '../models/movement.model.js';
 
 export const getAllMovements = async (req, res) => {
     try {
