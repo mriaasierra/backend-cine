@@ -1,20 +1,33 @@
-const express = require('express');
-const router = express.Router();
-const genreController = require('../controllers/genreController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import * as genreController from '../controllers/genreController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+
+const router = Router();
 
 // --- RUTAS DE GÉNEROS DE PELÍCULAS ---
 
-// PÚBLICO: Cualquier persona (o el frontend) puede ver los géneros para filtrar la cartelera
+/**
+ * @route   GET /api/genres
+ * @desc    PÚBLICO: Ver todos los géneros (Acción, Drama, etc.) para filtros en cartelera
+ */
 router.get('/', genreController.getAllGenres);
 
-// PRIVADO (ADMIN): Solo el Gerente puede crear nuevos géneros
+/**
+ * @route   POST /api/genres
+ * @desc    SOLO GERENTE: Registrar nuevos géneros en el sistema
+ */
 router.post('/', verifyToken, isGerente, genreController.createGenre);
 
-// PRIVADO (ADMIN): Solo el Gerente puede editar nombres de géneros
+/**
+ * @route   PUT /api/genres/:id
+ * @desc    SOLO GERENTE: Editar el nombre de un género existente
+ */
 router.put('/:id', verifyToken, isGerente, genreController.updateGenre);
 
-// PRIVADO (ADMIN): Solo el Gerente puede eliminar géneros
+/**
+ * @route   DELETE /api/genres/:id
+ * @desc    SOLO GERENTE: Eliminar géneros 
+ */
 router.delete('/:id', verifyToken, isGerente, genreController.deleteGenre);
 
-module.exports = router;
+export default router;

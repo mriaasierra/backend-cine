@@ -1,20 +1,48 @@
-const express = require('express');
-const router = express.Router();
-const productController = require('../controllers/productController');
-const categoryController = require('../controllers/categoryController');
-const { verifyToken, isGerente } = require('../middlewares/authMiddleware');
-const { validateProduct } = require('../middlewares/productValidator');
+import { Router } from 'express';
+import * as productController from '../controllers/productController.js';
+import * as categoryController from '../controllers/categoryController.js';
+import { verifyToken, isGerente } from '../middlewares/authMiddleware.js';
+import { validateProduct } from '../middlewares/productValidator.js';
 
-// --- PRODUCTOS ---
-// Cualquier empleado ve el catálogo de productos y stock actual
+const router = Router();
+
+// --- SECCIÓN: PRODUCTOS ---
+
+/**
+ * @route   GET /api/inventory/products
+ * @desc    CUALQUIER EMPLEADO: Ver catálogo completo y stock actual
+ */
 router.get('/products', verifyToken, productController.getAllProducts);
+
+/**
+ * @route   GET /api/inventory/products/alerts
+ * @desc    ALERTAS: Listar productos que están por debajo del stock mínimo
+ */
 router.get('/products/alerts', verifyToken, productController.getInventoryAlerts);
 
-// Solo el Gerente crea o edita productos
-router.post('/products', verifyToken, isGerente, validateProduct, productController.createProduct);
+/**
+ * @route   POST /api/inventory/products
+ * @desc    SOLO GERENTE: Registrar nuevos productos con validación técnica
+ */
+router.post('/products', 
+    verifyToken, 
+    isGerente, 
+    validateProduct, 
+    productController.createProduct
+);
 
-// --- CATEGORÍAS ---
+// --- SECCIÓN: CATEGORÍAS ---
+
+/**
+ * @route   GET /api/inventory/categories
+ * @desc    CUALQUIER EMPLEADO: Listar categorías disponibles
+ */
 router.get('/categories', verifyToken, categoryController.getAllCategories);
+
+/**
+ * @route   POST /api/inventory/categories
+ * @desc    SOLO GERENTE: Crear nuevas familias de productos
+ */
 router.post('/categories', verifyToken, isGerente, categoryController.createCategory);
 
-module.exports = router;
+export default router;
