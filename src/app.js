@@ -1,63 +1,61 @@
-// 1. IMPORTACIÓN DE MÓDULOS
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
 
-// 2. CONFIGURACIÓN DE VARIABLES DE ENTORNO
-dotenv.config();
+// Importación de rutas 
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import movieRoutes from './routes/movieRoutes.js';
+import genreRoutes from './routes/genreRoutes.js';
+import roomRoutes from './routes/roomRoutes.js';
+import screeningRoutes from './routes/screeningRoutes.js';
+import seatRoutes from './routes/seatRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
+import customerRoutes from './routes/customerRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import movementRoutes from './routes/movementRoutes.js';
 
-// 3. IMPORTACIÓN DE RUTAS
-const authRoutes = require('./routes/authRoutes');
-const movieRoutes = require('./routes/movieRoutes');
-const genreRoutes = require('./routes/genreRoutes');
-const roomRoutes = require('./routes/roomRoutes');
-const screeningRoutes = require('./routes/screeningRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
-const seatRoutes = require('./routes/seatRoutes');
-const customerRoutes = require('./routes/customerRoutes');
-const inventoryRoutes = require('./routes/inventoryRoutes');
-const movementRoutes = require('./routes/movementRoutes');
-
-// 4. INICIALIZACIÓN DE LA APP
 const app = express();
 
-// 5. MIDDLEWARES GLOBALES
+// --- MIDDLEWARES GLOBALES ---
 app.use(cors()); // Permite peticiones desde el frontend
-app.use(express.json()); // Permite procesar cuerpos JSON
+app.use(morgan('dev')); // Registro de peticiones en consola para depuración
+app.use(express.json()); // Habilita la lectura de cuerpos JSON en las peticiones
 
-// 6. REGISTRO DE RUTAS 
+// --- DEFINICIÓN DE RUTAS (API ENDPOINTS) ---
 
-// Autenticación y Usuarios (Login/Registro)
+// Módulo de Seguridad y Usuarios
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
-// Gestión de Películas y Géneros
+// Módulo de Cine y Cartelera
 app.use('/api/movies', movieRoutes);
 app.use('/api/genres', genreRoutes);
-
-// Infraestructura y Funciones del Cine
 app.use('/api/rooms', roomRoutes);
 app.use('/api/screenings', screeningRoutes);
-
-// Ventas, Clientes y Asignación de Asientos
-app.use('/api/bookings', bookingRoutes);
 app.use('/api/seats', seatRoutes);
+
+// Módulo de Ventas y Clientes
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/customers', customerRoutes);
 
-// Gestión de Inventario (Productos/Categorías) y Movimientos (Kardex)
-app.use('/api/inventory', inventoryRoutes);
+// Módulo de Suministros e Inventario 
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/movements', movementRoutes);
 
-// 7. MANEJO DE RUTAS NO ENCONTRADAS (404)
+// --- MANEJO DE RUTAS NO ENCONTRADAS ---
 app.use((req, res) => {
-    res.status(404).json({ 
-        message: "Error 404: La ruta solicitada no existe en el servidor." 
-    });
+  res.status(404).json({ message: "Ruta no encontrada en el sistema del cine" });
 });
 
-// 8. MANEJO DE ERRORES GLOBAL 
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ 
-        message: "Ha ocurrido un error interno en el servidor." 
-    });
+// --- CONFIGURACIÓN DEL PUERTO ---
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidoren: http://localhost:${PORT}`);
+  console.log(`Proyecto Cine`);
 });
+
+export default app;
