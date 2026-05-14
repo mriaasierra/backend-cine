@@ -4,7 +4,7 @@ import morgan from 'morgan';
 
 // Importación de rutas 
 import authRoutes from './routes/auth.routes.js';
-//import userRoutes from './routes/user.routes.js';
+import userRoutes from './routes/user.routes.js';
 import movieRoutes from './routes/movie.routes.js';
 import genreRoutes from './routes/genre.routes.js';
 import roomRoutes from './routes/room.routes.js';
@@ -27,7 +27,7 @@ app.use(express.json()); // Habilita la lectura de cuerpos JSON en las peticione
 
 // Módulo de Seguridad y Usuarios
 app.use('/api/auth', authRoutes);
-//app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 // Módulo de Cine y Cartelera
 app.use('/api/movies', movieRoutes);
