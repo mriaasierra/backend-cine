@@ -72,6 +72,7 @@ export const login = async (req, res) => {
 
         // 3. Comparar la contraseña ingresada con el hash 
         const isPasswordCorrect = await verified(password, user.password);
+        console.log('resultado de la verificación de contraseña:', isPasswordCorrect);
         
         if (!isPasswordCorrect) {
             return errorResponse(res, 'Credenciales inválidas (Contraseña incorrecta)', 401);

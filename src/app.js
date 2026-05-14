@@ -22,6 +22,7 @@ const app = express();
 app.use(cors()); // Permite peticiones desde el frontend
 app.use(morgan('dev')); // Registro de peticiones en consola para depuración
 app.use(express.json()); // Habilita la lectura de cuerpos JSON en las peticiones
+app.use(express.urlencoded({ extended: true })); // Habilita la lectura de datos de formularios
 
 // --- DEFINICIÓN DE RUTAS (API ENDPOINTS) ---
 

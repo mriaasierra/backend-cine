@@ -34,7 +34,7 @@ const Movie = {
             title, 
             director, 
             duration, 
-            poster_url, 
+            poster_url || 'null', 
             status || 'Activa', 
             genre_id
         ];
