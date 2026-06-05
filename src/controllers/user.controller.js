@@ -23,7 +23,7 @@ export const createUser = async (req, res) => {
             password: hashedPassword
         });
 
-        return successResponse(res, 'Usuario registrado exitosamente', newUser, 21);
+        return successResponse(res, 'Usuario registrado exitosamente', newUser, 200);
     } catch (error) {
         if (error.code === '23505') { // Error de duplicado en Postgres (email único)
             return errorResponse(res, 'El correo electrónico ya está registrado', 400);

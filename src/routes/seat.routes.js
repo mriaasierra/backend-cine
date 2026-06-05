@@ -9,16 +9,15 @@ const router = Router();
 
 /**
  * @route   GET /api/seats/booking/:bookingId
- * @desc    CONSULTA: Ver los asientos específicos vinculados a una reserva
- * @access  Privado (Cualquier empleado logueado)
+ * @desc    PÚBLICO: Ver los asientos específicos vinculados a una reserva
+ * @access  Cualquier usuario
  */
-router.get('/booking/:bookingId', authMiddleware, seatController.getSeatsByBooking);
+router.get('/booking/:bookingId', seatController.getSeatsByBooking); // 💡 Se eliminó authMiddleware
 
 /**
  * @route   POST /api/seats/assign
  * @desc    OPERACIÓN: Asignar múltiples asientos a una reserva en proceso de venta
  * @access  Privado (Cualquier empleado logueado)
- * @note    Recibe un array de identificadores de asientos (Ej: ["A1", "A2"])
  */
 router.post('/assign', 
     authMiddleware, 

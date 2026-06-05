@@ -9,9 +9,9 @@ const router = Router();
 
 /**
  * @route   GET /api/screenings
- * @desc    PRIVADO: Listar funciones 
+ * @desc    PÚBLICO: Listar funciones disponibles en cartelera
  */
-router.get('/', authMiddleware, screeningController.getAllScreenings);
+router.get('/', screeningController.getAllScreenings); // 💡 Se eliminó authMiddleware
 
 /**
  * @route   GET /api/screenings/:id

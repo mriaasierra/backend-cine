@@ -44,5 +44,15 @@ export const User = {
              ORDER BY u.user_id ASC`
         );
         return result.rows;
+    },
+
+    updatePassword: async (user_id, newHashedPassword) => {
+        const text = `
+            UPDATE users 
+            SET password = $1 
+            WHERE user_id = $2
+        `;
+        await query(text, [newHashedPassword, user_id]);
     }
+
 };

@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import { User } from '../models/user.model.js';
 import { encrypt, verified } from '../../utils/password.handle.js';
 import { generateToken } from '../../utils/jwt.handle.js';
 import { successResponse, errorResponse } from '../../utils/response.handle.js';
+import { sendRecoveryEmail } from '../../utils/mailer.hadle.js';
 
 /**
  * Lógica de Registro de Usuarios
@@ -100,7 +102,7 @@ export const login = async (req, res) => {
 /**
  * Función opcional para obtener el perfil del usuario actual (Me)
  */
-export const getProfile = async (req, res) => {
+    export const getProfile = async (req, res) => {
     try {
         // req.user viene inyectado por el authMiddleware
         const user = await User.findByEmail(req.user.email);
@@ -112,5 +114,37 @@ export const getProfile = async (req, res) => {
         });
     } catch (error) {
         return errorResponse(res, 'Error al recuperar perfil');
+    }
+    };
+
+    export const recoverPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // 1. Validar si el correo existe en el sistema
+        const user = await User.findByEmail(email);
+        
+        if (!user) {
+            return errorResponse(res, 'No existe ninguna cuenta asociada a este correo electrónico', 404);
+        }
+
+        // 2. Crear una nueva contraseña aleatoria (8 caracteres alfanuméricos)
+        const newPassword = crypto.randomBytes(4).toString('hex');
+
+        // 3. Encriptar la nueva contraseña
+        const hashedPassword = await encrypt(newPassword);
+
+        // 4. Actualizar la base de datos
+        await User.updatePassword(user.user_id, hashedPassword);
+
+        // 5. Enviar el correo al usuario
+        await sendRecoveryEmail(user.email, newPassword);
+
+        // 6. Responder al cliente
+        return successResponse(res, 'Contraseña restablecida. Por favor, revisa tu bandeja de entrada.');
+
+    } catch (error) {
+        console.error('Error en recoverPassword:', error);
+        return errorResponse(res, 'Hubo un error al intentar recuperar la contraseña. Intenta más tarde.');
     }
 };

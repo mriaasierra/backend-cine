@@ -6,10 +6,10 @@ const router = Router();
 
 /**
  * @route   GET /api/rooms
- * @desc    PRIVADO: Consultar todas las salas para verificar disponibilidad
- * @access  Cualquier empleado autenticado
+ * @desc    PÚBLICO: Consultar todas las salas para verificar disponibilidad
+ * @access  Cualquier usuario o cliente
  */
-router.get('/', authMiddleware, roomController.getAllRooms);
+router.get('/', roomController.getAllRooms); // 💡 Se quitó authMiddleware para que no pida token
 
 /**
  * @route   POST /api/rooms
