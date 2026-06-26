@@ -15,6 +15,7 @@ import customerRoutes from './routes/customer.routes.js';
 import productRoutes from './routes/product.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import movementRoutes from './routes/movement.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 const app = express();
 
@@ -25,6 +26,8 @@ app.use(express.json()); // Habilita la lectura de cuerpos JSON en las peticione
 app.use(express.urlencoded({ extended: true })); // Habilita la lectura de datos de formularios
 
 // --- DEFINICIÓN DE RUTAS (API ENDPOINTS) ---
+
+app.use('/api/admin', dashboardRoutes);
 
 // Módulo de Seguridad y Usuarios
 app.use('/api/auth', authRoutes);

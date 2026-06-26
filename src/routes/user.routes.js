@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createUser } from '../controllers/user.controller.js';
+import { getUsers, createUser, updateUser, deleteUser } from '../controllers/user.controller.js';
 import { authMiddleware, isGerente } from '../middlewares/auth.js';
 import { validateUser } from '../middlewares/user.validator.js';
 import userSchema from '../schemas/user.schema.js';
@@ -14,7 +14,13 @@ const router = Router();
 // Obtener lista de usuarios
 router.get('/', authMiddleware, isGerente, getUsers);
 
-// Registrar un nuevo usuario (con validación de esquema Zod)
+// Registrar un nuevo usuario (con validación de esquema Zod o Joi si aplica)
 router.post('/', authMiddleware, isGerente, validateUser, createUser);
+
+// Actualizar un usuario existente por su ID en la URL
+router.put('/:id', authMiddleware, isGerente, updateUser);
+
+// Eliminar un usuario por su ID en la URL
+router.delete('/:id', authMiddleware, isGerente, deleteUser);
 
 export default router;

@@ -22,7 +22,7 @@ export const register = async (req, res) => {
         const hashedPassword = await encrypt(password);
 
         // 3. Crear el usuario en la base de datos
-        // Por defecto, los usuarios nuevos suelen crearse como 'Activo'
+        // Por defecto, los usuarios nuevos se crean como 'Activo'
         const newUser = await User.create({
             first_name,
             last_name,
@@ -32,10 +32,10 @@ export const register = async (req, res) => {
             status: 'Activo'
         });
 
-        // 4. (Opcional) Generar token para que el usuario entre directamente
+        // 4. Generar token para que el usuario entre directamente
         const token = generateToken({
             user_id: newUser.user_id,
-            role_name: 'Empleado' // O el nombre del rol según el role_id
+            role_name: 'Empleado'
         });
 
         return successResponse(res, 'Registro exitoso', {
@@ -45,7 +45,7 @@ export const register = async (req, res) => {
                 email: newUser.email
             },
             token
-        }, 201); // 201: Created
+        }, 201);
 
     } catch (error) {
         console.error('Error en el registro:', error);
@@ -67,14 +67,14 @@ export const login = async (req, res) => {
             return errorResponse(res, 'Credenciales inválidas (Usuario no encontrado)', 401);
         }
 
-        // 2. Verificar si la cuenta está activa
+        // 2. Verificar si la cuenta está activa (Admite 'Activo' en mayúscula)
         if (user.status !== 'Activo') {
             return errorResponse(res, 'La cuenta se encuentra desactivada o bloqueada', 403);
         }
 
         // 3. Comparar la contraseña ingresada con el hash 
         const isPasswordCorrect = await verified(password, user.password);
-        console.log('resultado de la verificación de contraseña:', isPasswordCorrect);
+        console.log('Resultado de la verificación de contraseña:', isPasswordCorrect);
         
         if (!isPasswordCorrect) {
             return errorResponse(res, 'Credenciales inválidas (Contraseña incorrecta)', 401);
@@ -100,24 +100,45 @@ export const login = async (req, res) => {
 };
 
 /**
- * Función opcional para obtener el perfil del usuario actual (Me)
+ * Obtener el perfil del usuario actual logueado (Me)
+ * Optimizado para leer por ID de forma segura sin romper el estado global del front
  */
-    export const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
     try {
-        // req.user viene inyectado por el authMiddleware
-        const user = await User.findByEmail(req.user.email);
+        // req.user viene inyectado de forma segura por el authMiddleware
+        const userId = req.user?.user_id || req.user?.id;
+        const userEmail = req.user?.email;
+
+        let user;
+
+        // Buscamos primero por ID (más eficiente) y si no, por email alternativo
+        if (userId) {
+            user = await User.findById(userId);
+        } else if (userEmail) {
+            user = await User.findByEmail(userEmail);
+        }
+        
+        // Si no se encuentra el registro, retornamos un 404 limpio sin romper el backend
+        if (!user) {
+            return errorResponse(res, 'Usuario no encontrado en el sistema', 404);
+        }
+
         return successResponse(res, 'Perfil recuperado', {
             id: user.user_id,
             name: `${user.first_name} ${user.last_name}`,
             email: user.email,
-            role: user.role_name
+            role: user.role_name || user.role
         });
     } catch (error) {
+        console.error('Error detallado en getProfile:', error.message);
         return errorResponse(res, 'Error al recuperar perfil');
     }
-    };
+};
 
-    export const recoverPassword = async (req, res) => {
+/**
+ * Lógica para solicitar recuperar contraseña
+ */
+export const recoverPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
@@ -137,7 +158,7 @@ export const login = async (req, res) => {
         // 4. Actualizar la base de datos
         await User.updatePassword(user.user_id, hashedPassword);
 
-        // 5. Enviar el correo al usuario
+        // 5. Enviar el correo al usuario con la nueva clave temporal
         await sendRecoveryEmail(user.email, newPassword);
 
         // 6. Responder al cliente

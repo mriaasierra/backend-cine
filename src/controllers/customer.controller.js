@@ -24,7 +24,6 @@ export const createCustomer = async (req, res) => {
         const newCustomer = await Customer.create(req.body);
         res.status(201).json(newCustomer);
     } catch (error) {
-        // Manejo de error si la cédula ya existe 
         if (error.code === '23505') {
             return res.status(400).json({ message: "Ya existe un cliente con esa cédula" });
         }
@@ -32,18 +31,23 @@ export const createCustomer = async (req, res) => {
     }
 };
 
-// Actualizar datos del cliente
+// ACTUALIZAR DATOS DEL CLIENTE
 export const updateCustomer = async (req, res) => {
     const { id } = req.params;
-    const { first_name, last_name, email } = req.body;
     try {
-        const result = await query(
-            'UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4',
-            [first_name, last_name, email, id]
-        );
-        if (result.rowCount === 0) return res.status(404).json({ message: "Cliente no encontrado" });
-        res.json({ message: "Cliente actualizado con éxito" });
+        // Ejecutamos la actualización directamente con los campos de texto del cliente
+        const updatedCustomer = await Customer.update(id, req.body);
+        
+        if (!updatedCustomer) {
+            return res.status(404).json({ message: "Cliente no encontrado" });
+        }
+
+        res.json({ 
+            message: "Cliente actualizado con éxito", 
+            customer: updatedCustomer 
+        });
     } catch (error) {
-        res.status(500).json({ message: "Error al actualizar cliente" });
+        console.error("Error al actualizar cliente:", error.message);
+        res.status(500).json({ message: "Error al actualizar cliente", error: error.message });
     }
 };
