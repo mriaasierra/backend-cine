@@ -16,7 +16,7 @@ router.get('/', movieController.getAllMovies);
  * @route   GET /api/movies/:id
  * @desc    PÚBLICO: Ver detalles de una película específica
  */
-//router.get('/:id', movieController.getMovieById);
+router.get('/:id', movieController.getMovieById);
 
 /**
  * @route   POST /api/movies

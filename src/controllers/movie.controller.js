@@ -1,193 +1,132 @@
-import pg from 'pg';
-const { Pool } = pg;
+import Movie from '../models/movie.model.js';
+import db from '../config/db.js';
 
-// Conexión base a tu base de datos
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  password: '123456789',
-  database: 'Proyecto_cine',
-  port: 5432,
-});
-
-// 1. TRADUCTOR: Lo que viene del frontend ('Inactiva') -> Lo que entiende la BD ('Desactiva')
-const mapStatusToDB = (frontendStatus) => {
-    if (!frontendStatus) return 'Activa';
-    const status = frontendStatus.toLowerCase();
-    if (status === 'activa' || status === 'active') return 'Activa';
-    if (status === 'inactiva' || status === 'inactive' || status === 'desactiva') return 'Desactiva';
-    return 'Próximamente'; 
-};
-
-// 2. TRADUCTOR INVERSO: Lo que viene de la BD ('Desactiva') -> Lo que espera el frontend ('Inactiva')
-const mapStatusToFrontend = (dbStatus) => {
-    if (dbStatus === 'Activa') return 'Activa';
-    if (dbStatus === 'Desactiva') return 'Inactiva'; // <-- El secreto está aquí: el front solo verá "Inactiva"
-    return dbStatus;
-};
-
-// ==========================================
-// CONTROLLER METHODS
-// ==========================================
-
-// 1. OBTENER TODAS LAS PELÍCULAS
 export const getAllMovies = async (req, res) => {
     try {
-        const { search, genre_id, status } = req.query;
-        let query = `
-            SELECT 
-                m.movie_id, 
-                m.title, 
-                m.director, 
-                m.duration, 
-                m.poster_url, 
-                m.genre_id, 
-                g.name as genre_name,
-                m.status
+        const page = parseInt(req.query.page, 10);
+        const limit = parseInt(req.query.limit, 10);
+        const genreId = req.query.genre_id ? parseInt(req.query.genre_id, 10) : null;
+        const status = req.query.status;
+        const search = req.query.search;
+        
+        let queryStr = `
+            SELECT m.*, g.name as genre_name 
             FROM movies m
             LEFT JOIN genres g ON m.genre_id = g.genre_id
-            WHERE 1=1
-        `;
-        const values = [];
-        let paramIndex = 1;
-
-        if (search) {
-            query += ` AND (m.title ILIKE $${paramIndex} OR m.director ILIKE $${paramIndex})`;
-            values.push(`%${search}%`);
-            paramIndex++;
+            WHERE 1=1`;
+        
+        let countQueryStr = `
+            SELECT COUNT(*) 
+            FROM movies m
+            LEFT JOIN genres g ON m.genre_id = g.genre_id
+            WHERE 1=1`;
+            
+        const queryParams = [];
+        let paramCount = 0;
+        
+        if (genreId) {
+            paramCount++;
+            queryStr += ` AND m.genre_id = $${paramCount}`;
+            countQueryStr += ` AND m.genre_id = $${paramCount}`;
+            queryParams.push(genreId);
         }
-
-        if (genre_id) {
-            query += ` AND m.genre_id = $${paramIndex}`;
-            values.push(genre_id);
-            paramIndex++;
-        }
-
+        
         if (status && status !== 'todos') {
-            query += ` AND m.status = $${paramIndex}`;
-            values.push(mapStatusToDB(status));
-            paramIndex++;
+            paramCount++;
+            queryStr += ` AND m.status = $${paramCount}`;
+            countQueryStr += ` AND m.status = $${paramCount}`;
+            queryParams.push(status);
         }
-
-        query += " ORDER BY m.movie_id DESC";
-        const result = await pool.query(query, values);
-
-        // Mapeamos el status que viene de la base de datos a "Inactiva" antes de enviárselo al frontend
-        const formattedRows = result.rows.map(row => ({
-            ...row,
-            status: mapStatusToFrontend(row.status)
-        }));
-
-        return res.status(200).json(formattedRows);
+        
+        if (search) {
+            paramCount++;
+            queryStr += ` AND (m.title ILIKE $${paramCount} OR m.director ILIKE $${paramCount})`;
+            countQueryStr += ` AND (m.title ILIKE $${paramCount} OR m.director ILIKE $${paramCount})`;
+            queryParams.push(`%${search}%`);
+        }
+        
+        queryStr += ` ORDER BY m.title ASC`;
+        
+        const countRes = await db.query(countQueryStr, queryParams);
+        const total = parseInt(countRes.rows[0].count, 10);
+        
+        if (page && limit) {
+            const offset = (page - 1) * limit;
+            paramCount++;
+            queryStr += ` LIMIT $${paramCount}`;
+            queryParams.push(limit);
+            
+            paramCount++;
+            queryStr += ` OFFSET $${paramCount}`;
+            queryParams.push(offset);
+        }
+        
+        const { rows } = await db.query(queryStr, queryParams);
+        
+        if (page && limit) {
+            return res.json({
+                data: rows,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+        }
+        
+        res.json(rows);
     } catch (error) {
-        console.error("Error al obtener películas:", error.message);
-        return res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Error al obtener películas: " + error.message });
     }
 };
 
-// 2. CREAR NUEVA PELÍCULA
+export const getMovieById = async (req, res) => {
+    try {
+        const movie = await Movie.findById(req.params.id);
+        if (!movie) return res.status(404).json({ message: "Película no encontrada" });
+        res.json(movie);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 export const createMovie = async (req, res) => {
     try {
-        const { title, director, duration, poster_url, status, genre_id } = req.body;
-        // Traducimos "Inactiva" del formulario a "Desactiva" para la base de datos
-        const dbStatus = mapStatusToDB(status);
-
-        const query = `
-            INSERT INTO movies (title, director, duration, poster_url, status, genre_id)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *;
-        `;
-        const values = [title, director, duration, poster_url, dbStatus, genre_id];
-        const result = await pool.query(query, values);
-
-        // Devolvemos el registro formateado para el estado de la app en el front
-        const savedMovie = {
-            ...result.rows[0],
-            status: mapStatusToFrontend(result.rows[0].status)
-        };
-
-        return res.status(201).json({
-            success: true,
-            message: "Película creada exitosamente",
-            movie: savedMovie
-        });
+        const newMovie = await Movie.create(req.body);
+        res.status(201).json(newMovie);
     } catch (error) {
-        console.error("Error al crear película:", error.message);
-        return res.status(500).json({ error: error.message });
+        // Manejo específico si el genre_id no existe en la tabla genres
+        if (error.code === '23503') {
+            return res.status(400).json({ message: "El género especificado no existe" });
+        }
+        res.status(500).json({ error: error.message });
     }
 };
 
-// 3. ACTUALIZAR PELÍCULA
 export const updateMovie = async (req, res) => {
     try {
-        const movieId = req.params.id || req.body.movie_id || req.body.id;
-        const { title, director, duration, poster_url, status, genre_id } = req.body;
-
-        if (!movieId) {
-            return res.status(400).json({ success: false, message: "El ID de la película es requerido" });
-        }
-
-        // Si mandan estatus desde el front, lo transformamos a lo que requiere el ENUM
-        const dbStatus = status !== undefined ? mapStatusToDB(status) : undefined;
-
-        const query = `
-            UPDATE movies 
-            SET 
-                title = COALESCE($1, title),
-                director = COALESCE($2, director),
-                duration = COALESCE($3, duration),
-                poster_url = COALESCE($4, poster_url),
-                status = COALESCE($5, status),
-                genre_id = COALESCE($6, genre_id)
-            WHERE movie_id = $7
-            RETURNING *;
-        `;
-
-        const values = [title, director, duration, poster_url, dbStatus, genre_id, movieId];
-        const result = await pool.query(query, values);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: "Película no encontrada" });
-        }
-
-        // Formateamos la respuesta de la actualización para que el front reciba "Inactiva"
-        const updatedMovie = {
-            ...result.rows[0],
-            status: mapStatusToFrontend(result.rows[0].status)
-        };
-
-        return res.status(200).json({
-            success: true,
-            message: "Película actualizada correctamente",
-            movie: updatedMovie
-        });
-
+        const updated = await Movie.update(req.params.id, req.body);
+        if (!updated) return res.status(404).json({ message: "Película no encontrada" });
+        res.json(updated);
     } catch (error) {
-        console.error("Error al actualizar la película:", error.message);
-        return res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
+        res.status(500).json({ error: error.message });
     }
 };
 
-// 4. ELIMINAR PELÍCULA
+// Función para eliminar una película por ID
 export const deleteMovie = async (req, res) => {
+    const { id } = req.params; // Obtenemos el ID de la URL
     try {
-        const { id } = req.params;
-        const query = "DELETE FROM movies WHERE movie_id = $1 RETURNING *;";
-        const result = await pool.query(query, [id]);
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: "Película no encontrada" });
+        const result = await query('DELETE FROM movies WHERE id = $1', [id]);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "Película no encontrada" });
         }
 
-        return res.status(200).json({
-            success: true,
-            message: "Película eliminada exitosamente"
-        });
+        res.json({ message: "Película eliminada correctamente" });
     } catch (error) {
-        console.error("Error al eliminar película:", error.message);
-        return res.status(500).json({ error: error.message });
+        console.error(error);
+        res.status(500).json({ message: "Error al eliminar la película en la base de datos" });
     }
 };

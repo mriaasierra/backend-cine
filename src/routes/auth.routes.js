@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, register, getProfile, recoverPassword } from '../controllers/auth.controller.js';
+import { login, register, getProfile, recoverPassword, updateProfile, googleLogin } from '../controllers/auth.controller.js';
 import { authMiddleware, isGerente } from '../middlewares/auth.js';
 
 const router = Router();
@@ -8,14 +8,23 @@ const router = Router();
 // PÚBLICO: Acceso al sistema para todo el personal
 router.post('/login', login);
 
+// POST /api/auth/google
+// PÚBLICO: Acceso con Google
+router.post('/google', googleLogin);
+
 // POST /api/auth/register
-// PRIVADO: Registro de nuevo personal (Solo accesible por Gerente)
-router.post('/register', authMiddleware, isGerente, register);
+// PÚBLICO: Registro de nuevo personal/usuarios
+router.post('/register', register);
 
 // GET /api/auth/me
 // Obtener los datos del usuario logueado actualmente
 // Privado (Requiere Token)
 router.get('/me', authMiddleware, getProfile);
+
+// PUT /api/auth/me
+// Actualizar datos del perfil del usuario logueado
+// Privado (Requiere Token)
+router.put('/me', authMiddleware, updateProfile);
 
 //ruta para solicitar recuperar contraseña
 router.post('/recover-password', recoverPassword);

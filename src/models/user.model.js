@@ -25,11 +25,10 @@ export const User = {
         return result.rows[0];
     },
 
-    // Crear un nuevo usuario (Gerente o Empleado)
     create: async ({ first_name, last_name, email, password, role_id, status }) => {
         const result = await query(
             `INSERT INTO users (first_name, last_name, email, password, role_id, status) 
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id, email, first_name`,
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id, email, first_name, last_name`,
             [first_name, last_name, email, password, role_id, status]
         );
         return result.rows[0];
@@ -46,47 +45,6 @@ export const User = {
         return result.rows;
     },
 
-    // NUEVO: Actualizar dinámicamente cualquier campo del usuario (usado por el controlador)
-    update: async (id, updateData) => {
-        const fields = [];
-        const values = [];
-        let paramIndex = 1;
-
-        // Construimos dinámicamente el bloque SET basándonos en lo que venga del front
-        for (const [key, value] of Object.entries(updateData)) {
-            if (value !== undefined) {
-                fields.push(`${key} = $${paramIndex}`);
-                values.push(value);
-                paramIndex++;
-            }
-        }
-
-        if (fields.length === 0) return null;
-
-        // Añadimos el ID como el último parámetro de la consulta
-        values.push(id);
-        const text = `
-            UPDATE users 
-            SET ${fields.join(', ')} 
-            WHERE user_id = $${paramIndex} 
-            RETURNING user_id, first_name, last_name, email, status, role_id;
-        `;
-
-        const result = await query(text, values);
-        return result.rows[0];
-    },
-
-    // NUEVO: Eliminar un usuario por su ID
-    delete: async (id) => {
-        const text = `
-            DELETE FROM users 
-            WHERE user_id = $1 
-            RETURNING user_id;
-        `;
-        const result = await query(text, [id]);
-        return result.rows[0];
-    },
-
     updatePassword: async (user_id, newHashedPassword) => {
         const text = `
             UPDATE users 
@@ -94,5 +52,46 @@ export const User = {
             WHERE user_id = $2
         `;
         await query(text, [newHashedPassword, user_id]);
+    },
+
+    update: async (id, { first_name, last_name, email, role_id, status }) => {
+        const text = `
+            UPDATE users 
+            SET first_name = $1, last_name = $2, email = $3, role_id = $4, status = $5
+            WHERE user_id = $6 
+            RETURNING user_id, first_name, last_name, email, role_id, status
+        `;
+        const result = await query(text, [first_name, last_name, email, role_id, status, id]);
+        return result.rows[0];
+    },
+
+    delete: async (id) => {
+        await query('DELETE FROM users WHERE user_id = $1', [id]);
+        return true;
+    },
+
+    updateProfile: async (id, { first_name, last_name, email, profile_photo }) => {
+        // Try with profile_photo column first; fall back to without it if column doesn't exist
+        try {
+            const text = `
+                UPDATE users 
+                SET first_name = $1, last_name = $2, email = $3, profile_photo = $4
+                WHERE user_id = $5 
+                RETURNING user_id, first_name, last_name, email, profile_photo
+            `;
+            const result = await query(text, [first_name, last_name, email, profile_photo, id]);
+            return result.rows[0];
+        } catch (err) {
+            // If profile_photo column doesn't exist, update without it
+            const text = `
+                UPDATE users 
+                SET first_name = $1, last_name = $2, email = $3
+                WHERE user_id = $4 
+                RETURNING user_id, first_name, last_name, email
+            `;
+            const result = await query(text, [first_name, last_name, email, id]);
+            return result.rows[0];
+        }
     }
+
 };

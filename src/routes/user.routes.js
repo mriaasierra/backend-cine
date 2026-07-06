@@ -14,13 +14,13 @@ const router = Router();
 // Obtener lista de usuarios
 router.get('/', authMiddleware, isGerente, getUsers);
 
-// Registrar un nuevo usuario (con validación de esquema Zod o Joi si aplica)
+// Registrar un nuevo usuario (con validación de esquema Zod)
 router.post('/', authMiddleware, isGerente, validateUser, createUser);
 
-// Actualizar un usuario existente por su ID en la URL
-router.put('/:id', authMiddleware, isGerente, updateUser);
+// Actualizar un usuario
+router.put('/:id', authMiddleware, isGerente, validateUser, updateUser);
 
-// Eliminar un usuario por su ID en la URL
+// Eliminar un usuario
 router.delete('/:id', authMiddleware, isGerente, deleteUser);
 
 export default router;

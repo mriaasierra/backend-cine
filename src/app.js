@@ -1,8 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+
 
 // Importación de rutas 
+// Trigger Render Rebuild & Redeploy
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import movieRoutes from './routes/movie.routes.js';
@@ -15,7 +19,7 @@ import customerRoutes from './routes/customer.routes.js';
 import productRoutes from './routes/product.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import movementRoutes from './routes/movement.routes.js';
-import dashboardRoutes from './routes/dashboard.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 const app = express();
 
@@ -27,7 +31,9 @@ app.use(express.urlencoded({ extended: true })); // Habilita la lectura de datos
 
 // --- DEFINICIÓN DE RUTAS (API ENDPOINTS) ---
 
-app.use('/api/admin', dashboardRoutes);
+app.get('/', (req, res) => {
+  res.json({ message: "El servidor de la API del Cine está online y funcionando correctamente." });
+});
 
 // Módulo de Seguridad y Usuarios
 app.use('/api/auth', authRoutes);
@@ -49,6 +55,9 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/movements', movementRoutes);
 
+// Administración
+app.use('/api/admin', adminRoutes);
+
 // --- MANEJO DE RUTAS NO ENCONTRADAS ---
 app.use((req, res) => {
   res.status(404).json({ message: "Ruta no encontrada en el sistema del cine" });
@@ -57,7 +66,28 @@ app.use((req, res) => {
 // --- CONFIGURACIÓN DEL PUERTO ---
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+  console.log('Cliente WebSocket conectado');
+  
+  ws.on('message', (message) => {
+    console.log(`Mensaje WebSocket recibido: ${message}`);
+    // Reenviar mensaje a todos los clientes conectados (broadcast)
+    wss.clients.forEach((client) => {
+      if (client.readyState === 1) { // 1 = WS OPEN
+        client.send(message.toString());
+      }
+    });
+  });
+
+  ws.on('close', () => {
+    console.log('Cliente WebSocket desconectado');
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Servidor en: http://localhost:${PORT}`);
   console.log(`Proyecto Cine`);
 });

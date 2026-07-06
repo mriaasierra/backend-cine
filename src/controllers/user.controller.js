@@ -1,132 +1,152 @@
 import { User } from '../models/user.model.js';
 import { encrypt } from '../../utils/password.handle.js';
 import { successResponse, errorResponse } from '../../utils/response.handle.js';
+import { verifyEmailDomain } from '../../utils/email.validator.js';
+import { query } from '../config/db.js';
 
-// ==========================================
-// FUNCIONES TRADUCTORAS DE ESTADO (ENUM PUENTE)
-// ==========================================
-
-// Frontend ('Inactivo') -> Base de Datos ('Desactivo')
-const mapStatusToDB = (frontendStatus) => {
-    if (!frontendStatus) return 'Activo';
-    const status = frontendStatus.toLowerCase();
-    if (status === 'activo' || status === 'activa') return 'Activo';
-    if (status === 'inactivo' || status === 'inactiva' || status === 'desactivo' || status === 'desactiva') return 'Desactivo';
-    return 'Activo'; 
-};
-
-// Base de Datos ('Desactivo') -> Frontend ('Inactivo')
-const mapStatusToFrontend = (dbStatus) => {
-    if (dbStatus === 'Activo') return 'Activo';
-    if (dbStatus === 'Desactivo') return 'Inactivo'; // El frontend solo verá "Inactivo"
-    return dbStatus;
-};
-
-// ==========================================
-// METODOS DEL CONTROLADOR
-// ==========================================
-
-// 1. OBTENER TODOS LOS USUARIOS
 export const getUsers = async (req, res) => {
     try {
-        const users = await User.getAll();
+        const page = parseInt(req.query.page, 10);
+        const limit = parseInt(req.query.limit, 10);
+        const roleId = req.query.role_id ? parseInt(req.query.role_id, 10) : null;
+        const status = req.query.status;
+        const search = req.query.search;
         
-        // Mapeamos el estado de cada usuario antes de enviarlo al frontend
-        const formattedUsers = users.map(user => ({
-            ...user,
-            status: mapStatusToFrontend(user.status)
-        }));
-
-        return successResponse(res, 'Usuarios recuperados', formattedUsers);
+        let queryStr = `
+            SELECT u.user_id, u.first_name, u.last_name, u.email, u.status, u.role_id, r.role_name 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.role_id 
+            WHERE 1=1`;
+        
+        let countQueryStr = `
+            SELECT COUNT(*) 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.role_id 
+            WHERE 1=1`;
+            
+        const queryParams = [];
+        let paramCount = 0;
+        
+        if (roleId) {
+            paramCount++;
+            queryStr += ` AND u.role_id = $${paramCount}`;
+            countQueryStr += ` AND u.role_id = $${paramCount}`;
+            queryParams.push(roleId);
+        }
+        
+        if (status && status !== 'todos') {
+            paramCount++;
+            queryStr += ` AND u.status = $${paramCount}`;
+            countQueryStr += ` AND u.status = $${paramCount}`;
+            queryParams.push(status);
+        }
+        
+        if (search) {
+            paramCount++;
+            queryStr += ` AND (u.first_name ILIKE $${paramCount} OR u.last_name ILIKE $${paramCount} OR u.email ILIKE $${paramCount})`;
+            countQueryStr += ` AND (u.first_name ILIKE $${paramCount} OR u.last_name ILIKE $${paramCount} OR u.email ILIKE $${paramCount})`;
+            queryParams.push(`%${search}%`);
+        }
+        
+        queryStr += ` ORDER BY u.user_id ASC`;
+        
+        const countRes = await query(countQueryStr, queryParams);
+        const total = parseInt(countRes.rows[0].count, 10);
+        
+        if (page && limit) {
+            const offset = (page - 1) * limit;
+            paramCount++;
+            queryStr += ` LIMIT $${paramCount}`;
+            queryParams.push(limit);
+            
+            paramCount++;
+            queryStr += ` OFFSET $${paramCount}`;
+            queryParams.push(offset);
+        }
+        
+        const { rows } = await query(queryStr, queryParams);
+        
+        if (page && limit) {
+            return successResponse(res, 'Usuarios recuperados', rows, 200, {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            });
+        }
+        
+        return successResponse(res, 'Usuarios recuperados', rows);
     } catch (error) {
-        console.error("Error al obtener usuarios:", error.message);
-        return errorResponse(res, 'Error al obtener usuarios');
+        return errorResponse(res, 'Error al obtener usuarios: ' + error.message);
     }
 };
 
-// 2. CREAR UN NUEVO USUARIO
 export const createUser = async (req, res) => {
     try {
-        const { password, status, ...userData } = req.body;
+        const { password, email, ...userData } = req.body;
+        
+        // Verificar si el correo es real
+        const isRealEmail = await verifyEmailDomain(email);
+        if (!isRealEmail) {
+            return errorResponse(res, 'El correo electrónico proporcionado no es un correo real o no puede recibir mensajes.', 400);
+        }
         
         // Encriptación de la contraseña antes de ir a la DB
         const hashedPassword = await encrypt(password);
         
-        // Traducimos el estado para PostgreSQL
-        const dbStatus = mapStatusToDB(status);
-        
         const newUser = await User.create({
             ...userData,
-            status: dbStatus,
+            email,
             password: hashedPassword
         });
 
-        // Devolvemos el registro formateado con "Inactivo" para el estado global del front
-        const savedUser = {
-            ...newUser,
-            status: mapStatusToFrontend(newUser.status)
-        };
-
-        return successResponse(res, 'Usuario registrado exitosamente', savedUser, 200);
+        return successResponse(res, 'Usuario registrado exitosamente', newUser, 200);
     } catch (error) {
-        if (error.code === '23505') {
+        if (error.code === '23505') { // Error de duplicado en Postgres (email único)
             return errorResponse(res, 'El correo electrónico ya está registrado', 400);
         }
-        console.error("Error al crear usuario:", error.message);
         return errorResponse(res, 'Error al crear el usuario');
     }
 };
 
-// 3. ACTUALIZAR UN USUARIO EXISTENTE
 export const updateUser = async (req, res) => {
+    const { id } = req.params;
     try {
-        const { id } = req.params;
-        const { password, status, ...updateData } = req.body;
-
-        // Si viene contraseña en el formulario, la encriptamos
-        if (password && password.trim() !== '') {
-            updateData.password = await encrypt(password);
+        const { password, email } = req.body;
+        
+        if (email) {
+            const isRealEmail = await verifyEmailDomain(email);
+            if (!isRealEmail) {
+                return errorResponse(res, 'El correo electrónico proporcionado no es un correo real.', 400);
+            }
         }
 
-        // Si viene el estado del frontend, lo traducimos a lo que espera el ENUM de Postgres
-        if (status !== undefined) {
-            updateData.status = mapStatusToDB(status);
+        const dataToUpdate = { ...req.body };
+        if (password) {
+            const hashedPassword = await encrypt(password);
+            await User.updatePassword(id, hashedPassword);
         }
 
-        // Ejecutamos la actualización en el modelo
-        const updatedUser = await User.update(id, updateData);
-
+        const updatedUser = await User.update(id, dataToUpdate);
         if (!updatedUser) {
             return errorResponse(res, 'Usuario no encontrado', 404);
         }
 
-        // Formateamos la respuesta para que el frontend reciba "Inactivo" de vuelta
-        const formattedUser = {
-            ...updatedUser,
-            status: mapStatusToFrontend(updatedUser.status)
-        };
-
-        return successResponse(res, 'Usuario actualizado exitosamente', formattedUser);
+        return successResponse(res, 'Usuario actualizado exitosamente', updatedUser);
     } catch (error) {
-        console.error("Error al actualizar usuario:", error.message);
-        return errorResponse(res, 'Error al actualizar el usuario');
+        if (error.code === '23505') {
+            return errorResponse(res, 'El correo electrónico ya está registrado', 400);
+        }
+        return errorResponse(res, 'Error al actualizar el usuario: ' + error.message);
     }
 };
 
-// 4. ELIMINAR UN USUARIO
 export const deleteUser = async (req, res) => {
+    const { id } = req.params;
     try {
-        const { id } = req.params;
-
-        const deletedUser = await User.delete(id);
-
-        if (!deletedUser) {
-            return errorResponse(res, 'Usuario no encontrado', 404);
-        }
-
+        await User.delete(id);
         return successResponse(res, 'Usuario eliminado exitosamente');
     } catch (error) {
-        console.error("Error al eliminar usuario:", error.message);
-        return errorResponse(res, 'Error al eliminar el usuario');
+        return errorResponse(res, 'Error al eliminar el usuario: ' + error.message);
     }
 };
