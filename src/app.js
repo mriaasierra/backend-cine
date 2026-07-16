@@ -25,7 +25,7 @@ import { globalLimiter, checkBlockedIPs } from './middlewares/rateLimiter.js';
 const app = express();
 
 // --- MIDDLEWARES GLOBALES ---
-app.set('trust proxy', 1); // Confía en el primer proxy (ej. Render, Cloudflare) para obtener IPs reales
+app.set('trust proxy', true); // Confía en todos los proxies para obtener la IP original del cliente (primer elemento en X-Forwarded-For)
 app.use(checkBlockedIPs); // Verifica si la IP está bloqueada por 1 minuto
 app.use(globalLimiter); // Límite global de peticiones
 app.use(cors()); // Permite peticiones desde el frontend
